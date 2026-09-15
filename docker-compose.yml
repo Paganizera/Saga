@@ -1,0 +1,44 @@
+services:
+  blog:
+    container_name: blog
+    build:
+      context: src
+      dockerfile: Dockerfile
+    ports:
+      - "${blog_LOCAL_PORT:-8090}:${blog_PORT:-8090}"
+    env_file:
+      - .env
+    depends_on:
+        database:
+            condition: service_healthy
+    networks:
+      - default
+
+  database:
+    image: postgres:bullseye
+    hostname: blog-db
+    ports:
+      - "${DATABASE_LOCAL_PORT:-5432}:5432"
+    volumes:
+      - blog-postgres-data:/var/lib/postgresql/data
+    env_file:
+      - .env
+    environment:
+      POSTGRES_USER: ${DATABASE_USER}
+      POSTGRES_PASSWORD: ${DATABASE_PASSWORD}
+      POSTGRES_DB: ${DATABASE_DB}
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DATABASE_USER} -d ${DATABASE_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - default
+
+volumes:
+  blog-postgres-data:
+    name: blog-postgres-data
+
+networks:
+    default:
+        name: blog-network
