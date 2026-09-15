@@ -8,6 +8,7 @@ import saga.database.Post;
 import saga.database.repositories.CommentaryRepository;
 import saga.dto.CommentaryDTO;
 import saga.exceptions.CommentaryNotFoundException;
+import saga.exceptions.PostNotFoundException;
 
 import java.util.UUID;
 
@@ -24,7 +25,7 @@ public class CommentaryService {
     public Commentary create(UUID postId, CommentaryDTO.Create request) {
         Post post = postService.getById(postId);
         if (post == null) {
-            throw new CommentaryNotFoundException("Post not found: " + postId);
+            throw new PostNotFoundException("Post not found: " + postId);
         }
         Commentary commentary = new Commentary();
         commentary.setAuthor(request.author());
