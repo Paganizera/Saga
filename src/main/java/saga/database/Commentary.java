@@ -29,6 +29,7 @@ public class Commentary {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "post_id", nullable = false, updatable = false)
+    @com.fasterxml.jackson.annotation.JsonIgnore
     private Post post;
 
     @PrePersist

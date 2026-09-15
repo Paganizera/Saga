@@ -3,10 +3,8 @@ package saga.controllers;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import saga.database.Post;
-import saga.database.repositories.PostRepository;
 import saga.database.services.PostService;
 import saga.dto.PostDTO;
-
 
 import java.util.List;
 import java.util.UUID;
@@ -27,21 +25,32 @@ public class PostController {
 
     @GetMapping("/{id}")
     public ResponseEntity<PostDTO.Detail> getById(@PathVariable UUID id) {
-        try {
-            return ResponseEntity.ok(postService.getDetailById(id));
-        } catch (IllegalArgumentException e) {
-            return ResponseEntity.notFound().build();
-        }
+        return ResponseEntity.ok(postService.getDetailById(id));
+
     }
 
     @PostMapping
-    public Post create(@RequestBody PostDTO.Create request) {
-        return postService.create(request);
+    public PostDTO.Detail create(@RequestBody PostDTO.Create request) {
+        Post saved = postService.create(request);
+        return new PostDTO.Detail(
+                saved.getId(),
+                saved.getAuthor(),
+                saved.getTitle(),
+                saved.getContent(),
+                saved.getPublishedAt()
+        );
     }
 
     @PutMapping("/{id}")
-    public Post update(@PathVariable UUID id, @RequestBody PostDTO.Update request) {
-        return postService.update(id, request);
+    public PostDTO.Detail update(@PathVariable UUID id, @RequestBody PostDTO.Update request) {
+        Post updated = postService.update(id, request);
+        return new PostDTO.Detail(
+                updated.getId(),
+                updated.getAuthor(),
+                updated.getTitle(),
+                updated.getContent(),
+                updated.getPublishedAt()
+        );
     }
 
     @DeleteMapping("/{id}")

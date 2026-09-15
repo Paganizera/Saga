@@ -20,8 +20,9 @@ public class CommentaryController {
     }
 
     @PostMapping("/posts/{postId}/commentaries")
-    public Commentary create(@PathVariable UUID postId, @RequestBody CommentaryDTO.Create request) {
-        return commentaryService.create(postId, request);
+    public CommentaryDTO.Response create(@PathVariable UUID postId, @RequestBody CommentaryDTO.Create request) {
+        Commentary saved = commentaryService.create(postId, request);
+        return new CommentaryDTO.Response(saved.getId(), saved.getAuthor(), saved.getContent(), saved.getPublishedAt());
     }
 
     @GetMapping("/posts/{postId}/commentaries")
@@ -35,9 +36,18 @@ public class CommentaryController {
     }
 
     @GetMapping("/commentaries/{id}")
-    public ResponseEntity<Commentary> getById(@PathVariable UUID id) {
+    public ResponseEntity<CommentaryDTO.Response> getById(@PathVariable UUID id) {
         Commentary commentary = commentaryService.getById(id);
-        return commentary != null ? ResponseEntity.ok(commentary) : ResponseEntity.notFound().build();
+        if (commentary == null) {
+            return ResponseEntity.notFound().build();
+        }
+        return ResponseEntity.ok(
+                new CommentaryDTO.Response(
+                        commentary.getId(),
+                        commentary.getAuthor(),
+                        commentary.getContent(),
+                        commentary.getPublishedAt()
+                ));
     }
 
     @DeleteMapping("/commentaries/{id}")

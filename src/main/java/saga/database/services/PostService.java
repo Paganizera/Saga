@@ -46,7 +46,7 @@ public class PostService {
     public PostDTO.Detail getDetailById(UUID id) {
         Post post = postRep.getPostById(id);
         if (post == null) {
-            throw new IllegalArgumentException("Post not found: " + id);
+            throw new PostNotFoundException("Post not found: " + id);
         }
         return toDetail(post);
     }
