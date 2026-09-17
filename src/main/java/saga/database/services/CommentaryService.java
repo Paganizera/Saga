@@ -2,6 +2,7 @@ package saga.database.services;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 import saga.database.Commentary;
 import saga.database.Post;
@@ -43,6 +44,7 @@ public class CommentaryService {
                 .map(c -> new CommentaryDTO.Response(c.getId(), c.getAuthor(), c.getContent(), c.getPublishedAt()));
     }
 
+    @PreAuthorize("hasRole('ADMIN')")
     public void delete(UUID id) {
         comRep.deleteById(id);
     }

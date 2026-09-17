@@ -1,26 +1,28 @@
 services:
-  blog:
-    container_name: blog
+  saga:
+    container_name: saga
     build:
       context: src
       dockerfile: Dockerfile
     ports:
-      - "${blog_LOCAL_PORT:-8090}:${blog_PORT:-8090}"
+      - "${SAGA_LOCAL_PORT:-8090}:${SAGA_PORT:-8090}"
     env_file:
       - .env
+    environment:
+      DATABASE_HOST: database
     depends_on:
-        database:
-            condition: service_healthy
+      database:
+        condition: service_healthy
     networks:
       - default
 
   database:
     image: postgres:bullseye
-    hostname: blog-db
+    hostname: saga-db
     ports:
       - "${DATABASE_LOCAL_PORT:-5432}:5432"
     volumes:
-      - blog-postgres-data:/var/lib/postgresql/data
+      - saga-postgres-data:/var/lib/postgresql/data
     env_file:
       - .env
     environment:
@@ -36,9 +38,9 @@ services:
       - default
 
 volumes:
-  blog-postgres-data:
-    name: blog-postgres-data
+  saga-postgres-data:
+    name: saga-postgres-data
 
 networks:
     default:
-        name: blog-network
+        name: saga-network

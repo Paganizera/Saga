@@ -1,10 +1,11 @@
 package saga.database.services;
 
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 import saga.database.Post;
 import saga.database.repositories.CommentaryRepository;
 import saga.database.repositories.PostRepository;
-import saga.dto.PostDTO;
+import saga.dto.*;
 import saga.exceptions.PostNotFoundException;
 
 import java.util.List;
@@ -21,6 +22,7 @@ public class PostService {
         this.comRep = comRep;
     }
 
+    @PreAuthorize("hasRole('ADMIN')")
     public Post create(PostDTO.Create request) {
         Post post = new Post();
         post.setAuthor(request.author());
@@ -29,6 +31,7 @@ public class PostService {
         return postRep.save(post);
     }
 
+    @PreAuthorize("hasRole('ADMIN')")
     public Post update(UUID id, PostDTO.Update request) {
         Post existing = postRep.getPostById(id);
         if (existing == null) {
@@ -57,6 +60,7 @@ public class PostService {
                 .collect(Collectors.toList());
     }
 
+    @PreAuthorize("hasRole('ADMIN')")
     public void delete(UUID id) {
         postRep.deleteById(id);
     }

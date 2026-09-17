@@ -95,7 +95,7 @@ class PostIntegrationTest {
 
     @Test
     @WithMockUser(roles = "ADMIN")
-    void deleteAsAdmin() throws Exception {
+    void deleteAsAdminmi() throws Exception {
         Post post = new Post();
         post.setAuthor(AUTHOR);
         post.setTitle(POST_TITLE);
