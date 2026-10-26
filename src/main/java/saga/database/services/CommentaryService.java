@@ -29,8 +29,8 @@ public class CommentaryService {
             throw new PostNotFoundException("Post not found: " + postId);
         }
         Commentary commentary = new Commentary();
-        commentary.setAuthor(request.author());
-        commentary.setContent(request.content());
+        commentary.setAuthor(request.author().trim());
+        commentary.setContent(request.content().trim());
         commentary.setPost(post);
         return comRep.save(commentary);
     }
@@ -46,6 +46,9 @@ public class CommentaryService {
 
     @PreAuthorize("hasRole('ADMIN')")
     public void delete(UUID id) {
+        if (!comRep.existsById(id)) {
+            throw new CommentaryNotFoundException("Commentary not found: " + id);
+        }
         comRep.deleteById(id);
     }
 }

@@ -1,12 +1,16 @@
 package saga.controllers;
 
+import jakarta.validation.Valid;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 import saga.database.Post;
 import saga.database.services.PostService;
 import saga.dto.PostDTO;
 
-import java.util.List;
 import java.util.UUID;
 
 @RestController
@@ -19,43 +23,40 @@ public class PostController {
     }
 
     @GetMapping
-    public List<PostDTO.Summary> getAll() {
-        return postService.getAllSummaries();
+    public Page<PostDTO.Summary> getAll(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size
+    ) {
+        var pageable = PageRequest.of(
+                Math.max(page, 0),
+                Math.min(Math.max(size, 1), 50),
+                Sort.by(Sort.Direction.DESC, "publishedAt"));
+        return postService.getSummaries(pageable);
     }
 
     @GetMapping("/{id}")
     public ResponseEntity<PostDTO.Detail> getById(@PathVariable UUID id) {
         return ResponseEntity.ok(postService.getDetailById(id));
-
     }
 
     @PostMapping
-    public PostDTO.Detail create(@RequestBody PostDTO.Create request) {
-        Post saved = postService.create(request);
-        return new PostDTO.Detail(
-                saved.getId(),
-                saved.getAuthor(),
-                saved.getTitle(),
-                saved.getContent(),
-                saved.getPublishedAt()
-        );
+    public PostDTO.Detail create(@Valid @RequestBody PostDTO.Create request, Authentication authentication) {
+        Post saved = postService.create(authentication.getName(), request);
+        return toDetail(saved);
     }
 
     @PutMapping("/{id}")
-    public PostDTO.Detail update(@PathVariable UUID id, @RequestBody PostDTO.Update request) {
-        Post updated = postService.update(id, request);
-        return new PostDTO.Detail(
-                updated.getId(),
-                updated.getAuthor(),
-                updated.getTitle(),
-                updated.getContent(),
-                updated.getPublishedAt()
-        );
+    public PostDTO.Detail update(@PathVariable UUID id, @Valid @RequestBody PostDTO.Update request) {
+        return toDetail(postService.update(id, request));
     }
 
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> delete(@PathVariable UUID id) {
         postService.delete(id);
         return ResponseEntity.noContent().build();
+    }
+
+    private PostDTO.Detail toDetail(Post p) {
+        return new PostDTO.Detail(p.getId(), p.getAuthor(), p.getTitle(), p.getContent(), p.getPublishedAt());
     }
 }

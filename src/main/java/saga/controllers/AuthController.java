@@ -1,5 +1,6 @@
 package saga.controllers;
 
+import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -25,7 +26,7 @@ public class AuthController {
     }
 
     @PostMapping("/login")
-    public ResponseEntity<LoginDTO.Response> login(@RequestBody LoginDTO.Request request) {
+    public ResponseEntity<LoginDTO.Response> login(@Valid @RequestBody LoginDTO.Request request) {
         User user = userRep.findByUsername(request.username());
 
         if (user == null || !passwordEncoder.matches(request.password(), user.getPasswordHash())) {
