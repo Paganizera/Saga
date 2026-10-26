@@ -96,7 +96,20 @@ class CommentaryTest {
     @Test
     void deleteComment() {
         UUID id = UUID.randomUUID();
+        when(comRep.existsById(id)).thenReturn(true);
+
         commentaryService.delete(id);
+
         verify(comRep).deleteById(id);
+    }
+
+    @Test
+    void deleteCommentNotFound() {
+        UUID id = UUID.randomUUID();
+        when(comRep.existsById(id)).thenReturn(false);
+
+        assertThatThrownBy(() -> commentaryService.delete(id))
+                .isInstanceOf(CommentaryNotFoundException.class);
+        verify(comRep, never()).deleteById(any());
     }
 }

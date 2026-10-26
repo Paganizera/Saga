@@ -53,28 +53,36 @@ class PostIntegrationTest {
     @Test
     @WithMockUser(roles = "ADMIN")
     void createPostAsAdmin() throws Exception {
-        PostDTO.Create request = new PostDTO.Create (AUTHOR, POST_TITLE, CONTENT);
+        PostDTO.Create request = new PostDTO.Create(POST_TITLE, CONTENT);
 
         mockMvc.perform(post("/posts")
                         .contentType("application/json")
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.title", is(POST_TITLE)))
+                .andExpect(jsonPath("$.author", is("user"))) // vem do usuário autenticado, não do corpo
                 .andExpect(jsonPath("$.id", notNullValue()));
 
         assertEquals(1, postRepository.findAll().size());
     }
 
     @Test
-    void createPostFailsWhenNonAdmin() throws Exception {
-        PostDTO.Create  request = new PostDTO.Create (AUTHOR, POST_TITLE, CONTENT);
+    @WithMockUser(roles = "ADMIN")
+    void createPostWithBlankTitleReturns400() throws Exception {
+        PostDTO.Create request = new PostDTO.Create("  ", CONTENT);
 
         mockMvc.perform(post("/posts")
                         .contentType("application/json")
                         .content(objectMapper.writeValueAsString(request)))
-                .andExpect(status().is4xxClientError());
+                .andExpect(status().isBadRequest());
     }
 
+    @Test
+    @WithMockUser(roles = "ADMIN")
+    void deleteUnexistentPostReturns404() throws Exception {
+        mockMvc.perform(delete("/posts/{id}", UUID.randomUUID()))
+                .andExpect(status().isNotFound());
+    }
     @Test
     @WithMockUser(roles = "ADMIN")
     void updateContentAsAdmin() throws Exception {

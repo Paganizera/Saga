@@ -1,12 +1,15 @@
 package saga.controllers;
 
-import org.checkerframework.checker.units.qual.C;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import saga.database.Post;
 import saga.database.repositories.CommentaryRepository;
 import saga.database.repositories.PostRepository;
@@ -21,8 +24,7 @@ import java.util.UUID;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 class PostTest {
@@ -44,7 +46,7 @@ class PostTest {
     private static final String CONTENT = "Star Platinum ORA ORA ORA ORA ORA";
     private static final String UPDATED_TITLE = "Watashi no na wa Kira Yoshikage";
     private static final String UPDATED_CONTENT = " Nenre san-juu-san sai. Jitaku wa Morioh-cho hokuto bu no bessou chitai;";
-    
+
     @BeforeEach
     void setUp() {
         postId = UUID.randomUUID();
@@ -58,10 +60,10 @@ class PostTest {
 
     @Test
     void createPost() {
-        PostDTO.Create request = new PostDTO.Create(AUTHOR, TITLE, CONTENT);
+        PostDTO.Create request = new PostDTO.Create(TITLE, CONTENT);
         when(postRep.save(any(Post.class))).thenAnswer(inv -> inv.getArgument(0));
 
-        Post result = postService.create(request);
+        Post result = postService.create(AUTHOR, request);
 
         assertThat(result.getAuthor()).isEqualTo(AUTHOR);
         assertThat(result.getTitle()).isEqualTo(TITLE);
@@ -89,13 +91,38 @@ class PostTest {
 
     @Test
     void summaryIncludesCommentaryCount() {
-        when(postRep.findAll()).thenReturn(List.of(samplePost));
-        when(comRep.countByPost_Id(postId)).thenReturn(3L);
+        Pageable pageable = PageRequest.of(0, 10);
+        when(postRep.findAll(pageable)).thenReturn(new PageImpl<>(List.of(samplePost), pageable, 1));
 
-        List<PostDTO.Summary> summaries = postService.getAllSummaries();
+        CommentaryRepository.PostCount count = mock(CommentaryRepository.PostCount.class);
+        when(count.getPostId()).thenReturn(postId);
+        when(count.getTotal()).thenReturn(3L);
+        when(comRep.countByPostIds(List.of(postId))).thenReturn(List.of(count));
 
-        assertThat(summaries).hasSize(1);
-        assertThat(summaries.get(0).commentaryCount()).isEqualTo(3L);
+        Page<PostDTO.Summary> summaries = postService.getSummaries(pageable);
+
+        assertThat(summaries.getContent()).hasSize(1);
+        assertThat(summaries.getContent().get(0).commentaryCount()).isEqualTo(3L);
+    }
+
+    @Test
+    void summaryWithoutCommentsReturnsZero() {
+        Pageable pageable = PageRequest.of(0, 10);
+        when(postRep.findAll(pageable)).thenReturn(new PageImpl<>(List.of(samplePost), pageable, 1));
+        when(comRep.countByPostIds(List.of(postId))).thenReturn(List.of());
+
+        Page<PostDTO.Summary> summaries = postService.getSummaries(pageable);
+
+        assertThat(summaries.getContent().get(0).commentaryCount()).isZero();
+    }
+
+    @Test
+    void summaryOfEmptyPageSkipsCountQuery() {
+        Pageable pageable = PageRequest.of(0, 10);
+        when(postRep.findAll(pageable)).thenReturn(Page.empty(pageable));
+
+        assertThat(postService.getSummaries(pageable).getContent()).isEmpty();
+        verify(comRep, never()).countByPostIds(any());
     }
 
     @Test
@@ -122,7 +149,19 @@ class PostTest {
 
     @Test
     void deletePost() {
+        when(postRep.existsById(postId)).thenReturn(true);
+
         postService.delete(postId);
+
         verify(postRep).deleteById(postId);
+    }
+
+    @Test
+    void deletePostNotFound() {
+        when(postRep.existsById(postId)).thenReturn(false);
+
+        assertThatThrownBy(() -> postService.delete(postId))
+                .isInstanceOf(PostNotFoundException.class);
+        verify(postRep, never()).deleteById(any());
     }
 }

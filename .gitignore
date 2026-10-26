@@ -40,3 +40,9 @@ build/
 .DS_Store
 
 .env
+
+/frontend/node_modules
+
+/frontend/package-lock.json
+
+/frontend/.env
